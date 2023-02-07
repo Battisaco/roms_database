@@ -3,7 +3,6 @@ from bs4 import BeautifulSoup
 import re
 import pandas as pd
 import os
-import glob
 
 
 def get_consoles(url,headers):
@@ -102,8 +101,8 @@ def create_game_table(game_link,headers):
         df.to_csv(os.path.join(os.path.dirname(__file__), f'provider/tables_romsfun/games_table_{console_name}.csv'),index=False)
         
 def create_console_table(console,console_link):
-    temp = {'Console':console,
-            'Link':console_link,
+    temp = {'console':console,
+            'link':console_link,
             'site':'ROMSFUN.com'}
 
     df = pd.DataFrame(temp)
