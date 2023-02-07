@@ -2,7 +2,7 @@ import romsfun_request
 import romsgate_request
 
 def run():
-    #romsfun_request.romsfun_request()
+    romsfun_request.romsfun_request()
     romsgate_request.romsgames_request()
 
 
