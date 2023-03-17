@@ -28,7 +28,6 @@ def get_consoles() -> List[Console]:
             "image": str(console.select("img")[0]["src"]).strip(),
             "name": str(console.select(".h5")[0].text).strip(),
             "games": utils.str_to_int(footer[0].text.split(" ")[0]),
-            "downloads": utils.str_to_int(footer[2].text),
         }
         list.append(data)
 
