@@ -1,26 +1,19 @@
 from typing import TypedDict
 
-
 class Console(TypedDict):
     name: str
     image: str
-    games: int
-    downloads: int
-    provider: str
-    url: str
-
 
 class Game(TypedDict):
     name: str
     image: str
     rating: float
-    downloads: int
-    provider: str
-    url: str
-
+    release_date: str
 
 class Rom(TypedDict):
     name: str
     size: str
     type: str
+    provider:str
     url: str
+    version: str
