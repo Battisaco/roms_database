@@ -4,6 +4,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+provider/__pycache__
+Data/
+
 # C extensions
 *.so
 
