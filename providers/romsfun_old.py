@@ -1,7 +1,4 @@
 from typing import List
-import numpy as np
-import time
-import uuid
 
 import requests
 from bs4 import BeautifulSoup
@@ -10,12 +7,14 @@ import utils
 from typings import Console, Game, Rom
 
 url = "https://romsfun.com/roms"
+headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"
+}
+
 
 def get_consoles() -> List[Console]:
-    """
-    Get all consoles from romsfun.com
-    """    
-    headers = {'User-Agent': utils.random_header()}
+    """Get all consoles from romsfun.com"""
+
     r = requests.get(url, headers=headers)
     soup = BeautifulSoup(r.content, "html5lib")
     consoles = soup.select(".row > div > a")
@@ -24,10 +23,11 @@ def get_consoles() -> List[Console]:
     for console in consoles:
         footer = console.select("span.small > span")
         data: Console = {
-            "id": str(uuid.uuid4()),
+            "provider": "romsfun",
+            "url": str(console["href"]).strip(),
+            "image": str(console.select("img")[0]["src"]).strip(),
             "name": str(console.select(".h5")[0].text).strip(),
-            "image": str(console.select("img")[0]["src"]).strip(),                        
-            "url": {'romsfun':str(console["href"]).strip()},
+            "games": utils.str_to_int(footer[0].text.split(" ")[0]),
         }
         list.append(data)
 
@@ -37,61 +37,39 @@ def get_consoles() -> List[Console]:
 def get_games_for_console(console: Console) -> List[Game]:
     """Get all games for a console from romsfun.com"""
 
-    list_g :List[Game] = [] 
-
-    console_url = list(console["url"].values())[0]
-    headers = {'User-Agent': utils.random_header()}
+    console_url = console["url"]
     r = requests.get(console_url, headers=headers)
     soup = BeautifulSoup(r.content, "html5lib")
 
     last_page_url = str(soup.select(".pagination > li > a")[-1]["href"])
     page_count = int(last_page_url.split("/")[-1])
 
-    list_g += get_games_in_page(soup,console)
-    print(f'Console:{console["name"]}, 0%')
-
-    for page in range(2, page_count + 1):
-        if page%5==0:
-            print(f'Console:{console["name"]},' \
-                  f'{np.round((page/(page_count +1))*100,2)}%')
-        headers = {'User-Agent': utils.random_header()}
+    list = get_games_in_page(soup)
+    for page in range(1, page_count + 1):
         r = requests.get(f"{console_url}/page/{page}", headers=headers)
         soup = BeautifulSoup(r.content, "html5lib")
-        list_g += get_games_in_page(soup,console)
+        list += get_games_in_page(soup)
 
-    return list_g
+    return list
 
 
-def get_games_in_page(soup: BeautifulSoup,console) -> List[Game]:
+def get_games_in_page(soup: BeautifulSoup) -> List[Game]:
     """Get all games in a page from romsfun.com"""
 
     games = soup.select(".row > div > a")
     list: List[Game] = []
 
     for game in games:
-
-        try:
-            name     = str(game.select(".h5")[0].text).strip()
-        except:
-            name     = None
-
-        try:
-            image     = str(game.select("img")[0]["src"]).strip()
-        except:
-            image     = None
-
-
-
+        footer = game.select("div > div")
         data: Game = {
-            "id": str(uuid.uuid4()),
-            "console_id":console["id"],
-            "name": name,
-            "image": image,
-            "console":console["name"],
-            "url": {'romnfun':str(game["href"]).strip()},
+            "provider": "romsfun",
+            "url": str(game["href"]).strip(),
+            "image": str(game.select("img")[0]["src"]).strip(),
+            "name": str(game.select(".h5")[0].text).strip(),
+            "rating": utils.str_to_float(footer[2].attrs["data-rateyo-rating"]),
+            "downloads": utils.str_to_int(footer[0].text),
         }
         list.append(data)
-
 
     return list
 
@@ -99,8 +77,7 @@ def get_games_in_page(soup: BeautifulSoup,console) -> List[Game]:
 def get_roms_for_game(game: Game) -> List[Rom]:
     """Get all roms for a game from romsfun.com"""
 
-    game_url = game["temp_url"]
-    headers = {'User-Agent': utils.random_header()}
+    game_url = game["url"]
     r = requests.get(game_url, headers=headers)
     soup = BeautifulSoup(r.content, "html5lib")
 
@@ -116,9 +93,7 @@ def get_roms_for_game(game: Game) -> List[Rom]:
             "name": str(rom.select("td")[0].text).strip(),
             "size": str(rom.select("td")[1].text).strip(),
             "type": str(rom.select("td")[2].text).strip(),
-            "provider":"romsfun.com",
             "url": str(rom.select("td > a")[0]["href"]).strip(),
-            "version": 'test'
         }
         list.append(data)
 

@@ -1,5 +1,8 @@
 from typing import List
 import numpy as np
+import pandas as pd
+import time
+import uuid
 
 import requests
 from bs4 import BeautifulSoup
@@ -10,6 +13,10 @@ from typings import Console, Game, Rom
 url = "https://www.romsgames.net"
 url_rom = "https://www.romsgames.net/roms/"
 headers = {'User-Agent': utils.random_header()}
+
+def get_provider() -> str:
+    return 'romsgames'
+
 
 def get_consoles() -> List[Console]:
     '''
@@ -23,10 +30,10 @@ def get_consoles() -> List[Console]:
     list: List[Console] = []
     for console in consoles:
         data: Console = {
+            "id": str(uuid.uuid4()),
             "name": str(console.select("img")[0]["alt"]).strip().lower(),
             "image":str(console.select("img")[0]["src"]).strip().lower(),
-            "temp_url": ("https://www.romsgames.net" + 
-                         str(console["href"]).strip()).lower(),
+            "url": {'romsgames':(url + str(console["href"]).strip()).lower()}
         }
         list.append(data)
 
@@ -35,45 +42,49 @@ def get_consoles() -> List[Console]:
 def get_games_for_console(console: Console) -> List[Game]:
     """Get all games for a console from romsgames.com"""
     
-    list = []
-    for console_dict in console:
+    list_g :List[Game] = [] 
 
-        console_url = console_dict["temp_url"]
+    console_url = list(console["url"].values())[0]
+    headers = {'User-Agent': utils.random_header()}
+    r = requests.get(console_url, headers=headers)
+    soup = BeautifulSoup(r.content, "html5lib")
+
+    page_count = len(soup.select(".pagination li+ li a"))
+    
+    list_g += get_games_in_page(soup,console)
+    print(f'Console:{console["name"]}, 0%')
+
+    for page in range(2, page_count +1):
+        if page%5==0:
+            print(f'Console:{console["name"]},' \
+                    f'{np.round((page/(page_count +1))*100,2)}%')
         headers = {'User-Agent': utils.random_header()}
-        r = requests.get(console_url, headers=headers)
+        r = requests.get(f"{console_url}?page={page}", 
+                            headers=headers)
         soup = BeautifulSoup(r.content, "html5lib")
+        list_g += get_games_in_page(soup,console)
 
-        page_count = len(soup.select(".pagination li+ li a"))
-        
-        list += get_games_in_page(soup,console_dict["name"])
-        print(f'Console:{console_dict["name"]}, 0%')
 
-        for page in range(2, page_count +1):
-            if page%5==0:
-                print(f'Console:{console_dict["name"]},' \
-                      '{np.round((page/(page_count +1))*100,2)}%')
-            headers = {'User-Agent': utils.random_header()}
-            r = requests.get(f"{console_url}?page={page}", 
-                             headers=headers)
-            soup = BeautifulSoup(r.content, "html5lib")
-            list += get_games_in_page(soup,console_dict["name"])
-
-    return list       
+    return list_g       
 
 
 
-def get_games_in_page(soup: BeautifulSoup,console_name) -> List[Game]:
+def get_games_in_page(soup: BeautifulSoup,console) -> List[Game]:
     """Get all games in a page from romsgames.com"""
     games = soup.select(".rg-gamelist a")
     list: list[Game] = []
 
     for game in games:
         data: Game = {
+            "id": str(uuid.uuid4()),
+            "console_id":console["id"],
             "name": str(game.select("img")[0]["alt"]).strip().lower(),
             "image": str(game.select("img")[0]["src"]).strip().lower(),
-            "console": console_name,
-            "temp_url":url + str(game['href']).strip().lower(),
+            "console": console["name"],
+            "url": {'romsgames':url + str(game['href']).strip().lower()}
         }
+        list.append(data)
+
         #rating and release will get from another place
     
     return list
@@ -90,7 +101,11 @@ def get_roms_for_game(game: Game) -> List[Rom]:
             print(f'Starting to get {Console_name} roms')           
 
         if flag%100==0:
-            print(f'We are in {np.round((100*flag/len(game)),2)}%') 
+            print(f'We are in {np.round((100*flag/len(game)),2)}%')
+        
+        if flag%1000==0:
+            time.sleep(5)
+            print('milestone, sleep for 5 seconds') 
 
         game_url = game_dict["temp_url"]
         headers = {'User-Agent': utils.random_header()}

@@ -1,4 +1,13 @@
 import random
+import re
+from difflib import SequenceMatcher
+
+import jellyfish
+
+def similar(a, b):
+    #sim = jellyfish.damerau_levenshtein_distance(a, b)
+    sim  = SequenceMatcher(None, a, b).ratio()
+    return sim
 
 def str_to_int(s: str) -> int:
     """Converts a string to an integer."""
@@ -26,3 +35,43 @@ def random_header():
     user_agent = random.choice(user_agent_list)
 
     return user_agent  
+
+def update_console_name(str):
+    name = {
+        'game boy (gb)':"gameboy",
+        'game boy color':"gameboy color",
+        'gba': "gameboy advance",
+        'nes': "super nintendo",
+        'playstation (ps)':"playstation",
+        'ps2': "playstation 2",
+        'ps3': "playstation 3",
+        'ps4': "playstation 4",
+        'psp': "playstation portable",
+        'sega dreamcast': "dreamcast",
+        'snes': "super nintendo",
+        'wii u': "nintendo wii u",
+        'xbox': "microsoft xbox",
+        'xbox 360': "microsoft xbox 360",
+    }
+    temp = str.lower() 
+    if temp in name.keys():
+        str = name[str.lower()]
+    
+    return str.lower()
+
+def check_game_name(series,str):
+    """
+    Function to check if a game is already on tha base
+    """
+
+    for game in series:
+        game = re.sub('[^A-Za-z0-9]+', '', game)
+        str  = re.sub('[^A-Za-z0-9]+', '', str) 
+        point = similar(game,str)
+
+        if (point > 0.85) or (game == str):
+            '''The game is problaby already in DB'''
+            return 0
+    
+    return 1
+

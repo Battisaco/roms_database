@@ -7,6 +7,9 @@ __pycache__/
 provider/__pycache__
 Data/
 
+test.py
+main_old.py
+
 # C extensions
 *.so
 
