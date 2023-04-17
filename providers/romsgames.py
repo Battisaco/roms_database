@@ -58,6 +58,7 @@ def get_games_for_console(console: Console) -> List[Game]:
         if page%5==0:
             print(f'Console:{console["name"]},' \
                     f'{np.round((page/(page_count +1))*100,2)}%')
+            time.sleep(1)
         headers = {'User-Agent': utils.random_header()}
         r = requests.get(f"{console_url}?page={page}", 
                             headers=headers)
@@ -89,7 +90,7 @@ def get_games_in_page(soup: BeautifulSoup,console) -> List[Game]:
     
     return list
 
-def get_roms_for_game(game: Game) -> List[Rom]:
+def get_roms_for_game_old(game: Game) -> List[Rom]:
     """Get all roms for a game from romsgames.com"""
     list: List[Rom] = []
     Console_name = 'start'
@@ -145,3 +146,51 @@ def get_roms_for_game(game: Game) -> List[Rom]:
         flag+=1
         
     return list
+
+def get_roms_for_game(game: Game, site: str) -> List[Rom]:
+    """Get all roms for a game from romsgames.com"""
+    list: List[Rom] = []
+
+    game_url = game["url"][site]
+    headers = {'User-Agent': utils.random_header()}
+    r = requests.get(game_url, headers=headers)
+    soup = BeautifulSoup(r.content, "html5lib")
+
+    try:
+        name     = soup.select(".rom-title")[0].text.strip()
+    except:
+        name     = None
+        print(f'Problem in {game_url}')
+    
+    #try:
+        #rom_url  = soup.select(".w-100")
+        #url + soup.select("form")[1]["action"].strip()
+    #except:
+        #rom_url  = None
+        #print(f'Problem in {game_url}')
+    
+    try:
+        size     = soup.select(".gameinfo li+ li")[0].text.strip()
+        version  = soup.select(f"div.rg-gamebox-info > ul.gameinfo" \
+                                "> li > img")[0]["alt"].strip()
+    except:
+        size     =None
+        version  =None
+
+    data: Rom = {
+            "id": str(uuid.uuid4()),
+            "game_id": game["id"],
+            "name": name,
+            "size": size,
+            "type": ".zip",
+            "link":game_url,
+            "provider":site,
+            "version": version,
+        }
+    list.append(data)
+        
+    return list
+
+
+def test():
+    print("ok")

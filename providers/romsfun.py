@@ -54,6 +54,7 @@ def get_games_for_console(console: Console) -> List[Game]:
         if page%5==0:
             print(f'Console:{console["name"]},' \
                   f'{np.round((page/(page_count +1))*100,2)}%')
+            time.sleep(1)
         headers = {'User-Agent': utils.random_header()}
         r = requests.get(f"{console_url}/page/{page}", headers=headers)
         soup = BeautifulSoup(r.content, "html5lib")
@@ -88,7 +89,7 @@ def get_games_in_page(soup: BeautifulSoup,console) -> List[Game]:
             "name": name,
             "image": image,
             "console":console["name"],
-            "url": {'romnfun':str(game["href"]).strip()},
+            "url": {'romsfun':str(game["href"]).strip()},
         }
         list.append(data)
 
@@ -96,15 +97,19 @@ def get_games_in_page(soup: BeautifulSoup,console) -> List[Game]:
     return list
 
 
-def get_roms_for_game(game: Game) -> List[Rom]:
+def get_roms_for_game(game: Game, site: str) -> List[Rom]:
     """Get all roms for a game from romsfun.com"""
 
-    game_url = game["temp_url"]
+    game_url = game["url"][site]
     headers = {'User-Agent': utils.random_header()}
     r = requests.get(game_url, headers=headers)
     soup = BeautifulSoup(r.content, "html5lib")
 
-    download_page_url = str(soup.select(".entry-content > a")[0]["href"])
+    try:
+        download_page_url = str(soup.select(".entry-content > a")[0]["href"])
+    except:
+        return []
+    
     r = requests.get(download_page_url, headers=headers)
     soup = BeautifulSoup(r.content, "html5lib")
 
@@ -112,13 +117,39 @@ def get_roms_for_game(game: Game) -> List[Rom]:
 
     list: List[Rom] = []
     for rom in roms:
+
+        try:
+            name     = str(game.select(".h5")[0].text).strip()
+            version  = name.split(' ')[-1]
+        except:
+
+            name     = None
+            version  = None
+
+        try:
+            size     = str(rom.select("td")[1].text).strip()
+        except:
+            size     = None
+
+        try:
+            type     = str(rom.select("td")[2].text).strip()
+        except:
+            type     = None
+
+        try:
+            url     = str(rom.select("td > a")[0]["href"]).strip()
+        except:
+            url     = None
+
         data: Rom = {
-            "name": str(rom.select("td")[0].text).strip(),
-            "size": str(rom.select("td")[1].text).strip(),
-            "type": str(rom.select("td")[2].text).strip(),
-            "provider":"romsfun.com",
-            "url": str(rom.select("td > a")[0]["href"]).strip(),
-            "version": 'test'
+            "id": str(uuid.uuid4()),
+            "game_id": game["id"],
+            "name": name,
+            "size": size,
+            "type": type,
+            "provider":site,
+            "url": url,
+            "version": version
         }
         list.append(data)
 
