@@ -1,10 +1,12 @@
 from typing import TypedDict
 
+
 class Console(TypedDict):
     id: str
     name: str
     image: str
     url: dict
+
 
 class Game(TypedDict):
     id: str
@@ -14,6 +16,7 @@ class Game(TypedDict):
     console: str
     url: dict
 
+
 class Rom(TypedDict):
     id: str
     game_id: str
@@ -21,5 +24,5 @@ class Rom(TypedDict):
     size: str
     type: str
     link: str
-    provider:str
+    provider: str
     version: str
