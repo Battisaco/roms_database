@@ -1,22 +1,25 @@
 from typing import TypedDict
 
 class Console(TypedDict):
+    id: str
     name: str
     image: str
-    temp_url: str
+    url: dict
 
 class Game(TypedDict):
+    id: str
+    console_id: str
     name: str
     image: str
     console: str
-    temp_url: str
-    #rating: float
-    #release_date: str
+    url: dict
 
 class Rom(TypedDict):
+    id: str
+    game_id: str
     name: str
     size: str
     type: str
+    link: str
     provider:str
-    url: str
     version: str
